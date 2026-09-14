@@ -204,31 +204,31 @@
   </div>
 
   <script>
-    // Usuários e Senhas extraídos diretamente da aba "ALUNOS" da planilha
+    // Usuários e senhas sincronizados com a aba "ALUNOS" da planilha.
     let userCredentials = {
       "Cileni": "@000",
       "Lara": "@002",
       "Igor": "@003",
       "David": "@004",
-      "Cristina": "@005"
+      "Cristina": "@005",
+      "Luciano": "@006",
+      "Yury": "@007"
     };
 
-    // Fichas de Treino por Aluno (Cileni com Treinos A e B conforme planilha)
+    // Fichas sincronizadas com as abas individuais da planilha.
     let studentsData = {
       "Cileni": {
-        metodologia: "Anterior / Posterior",
-        grupos: {
-          "A": "Quadríceps, Peitoral e Tríceps",
-          "B": "Posterior de Coxa, Costas e Bíceps"
-        },
+        metodologia: "Periodização Personalizada",
+        grupos: { "A": "Treino A", "B": "Treino B" },
         treinos: {
           "A": [
             { exercicio: "Cadeira extensora", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Supino vertical", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Leg press", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Crucifixo máquina", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
+            { exercicio: "Supino vertical", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=a56lnqizt-A&t=253s" },
+            { exercicio: "Leg press", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=adPY6cd4h58" },
+            { exercicio: "Abdução de ombros", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=IwWvZ0rlNXs&t=30s" },
             { exercicio: "Cadeira abdutora", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Tríceps pulley", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }
+            { exercicio: "Tríceps pulley", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=dTqDKC0D6P4&t=9s" },
+            { exercicio: "ESTEIRA", series: 1, repeticoes: "30’", video: "https://www.youtube.com/shorts/95hMno4GE4c" }
           ],
           "B": [
             { exercicio: "Cadeira flexora", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
@@ -241,41 +241,66 @@
         }
       },
       "David": {
-        metodologia: "Anterior / Posterior",
-        grupos: { "A": "Quadríceps, Peitoral e Tríceps" },
+        metodologia: "Periodização Personalizada",
+        grupos: { "A": "Treino A" },
         treinos: {
           "A": [
             { exercicio: "Cadeira extensora", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
             { exercicio: "Supino vertical", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Leg press", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Crucifixo máquina", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Cadeira abdutora", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
-            { exercicio: "Tríceps pulley", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }
+            { exercicio: "Leg press", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }
           ]
         }
       },
-      "Lara": {
-        metodologia: "Hipertrofia Feminina",
-        grupos: { "A": "Glúteos e Coxas", "B": "Membros Superiores" },
+      "Luciano": {
+        metodologia: "Periodização Personalizada",
+        grupos: { "A": "Treino A", "B": "Treino B" },
         treinos: {
-          "A": [{ exercicio: "Elevação Pélvica", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }],
-          "B": [{ exercicio: "Puxada Frontal", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }]
+          "A": [
+            { exercicio: "Crucifixo máquina", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=FzCnfD0gOXo" },
+            { exercicio: "Supino vertical", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=a56lnqizt-A&t=378s" },
+            { exercicio: "Leg press", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=a56lnqizt-A&t=378s" },
+            { exercicio: "Cadeira extensora", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
+            { exercicio: "Abdução de ombros", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=IwWvZ0rlNXs" },
+            { exercicio: "Tríceps pulley", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=dTqDKC0D6P4&t=4s" },
+            { exercicio: "Cadeira adutora", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=Wf602gn_9zU" },
+            { exercicio: "Abdominal supra", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=7YxVRiATugo" }
+          ],
+          "B": [
+            { exercicio: "Puxador anterior", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=9FFLBDWXSZA&t=301s" },
+            { exercicio: "Remada máquina", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=QyvIEdEHzHc" },
+            { exercicio: "Cadeira flexora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Mesa flexora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Remada alta cross over", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Rosca direta", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Cadeira abdutora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Panturrilha em pé", series: 3, repeticoes: 12, video: "" }
+          ]
         }
       },
-      "Igor": {
-        metodologia: "ABC - Ganho de Massa",
-        grupos: { "A": "Peito e Tríceps", "B": "Costas e Bíceps", "C": "Pernas e Ombros" },
+      "Yury": {
+        metodologia: "Periodização Personalizada",
+        grupos: { "A": "Treino A", "B": "Treino B" },
         treinos: {
-          "A": [{ exercicio: "Supino Reto Barra", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }],
-          "B": [{ exercicio: "Barra Fixa", series: 4, repeticoes: 8, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }],
-          "C": [{ exercicio: "Agachamento Livre", series: 4, repeticoes: 10, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }]
-        }
-      },
-      "Cristina": {
-        metodologia: "Fortalecimento",
-        grupos: { "A": "Core e Pernas" },
-        treinos: {
-          "A": [{ exercicio: "Leg Press 45", series: 3, repeticoes: 15, video: "https://www.youtube.com/watch?v=el3oHblB5DM" }]
+          "A": [
+            { exercicio: "Supino inclinado", series: 3, repeticoes: 10, video: "https://www.youtube.com/watch?v=FzCnfD0gOXo" },
+            { exercicio: "Crucifixo máquina", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=a56lnqizt-A&t=378s" },
+            { exercicio: "Supino vertical", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=a56lnqizt-A&t=378s" },
+            { exercicio: "Paralela", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=el3oHblB5DM" },
+            { exercicio: "Tríceps testa", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=IwWvZ0rlNXs" },
+            { exercicio: "Tríceps mergulho máq", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=dTqDKC0D6P4&t=4s" },
+            { exercicio: "Tríceps pulley + francês", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=Wf602gn_9zU" },
+            { exercicio: "Abdominal supra", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=7YxVRiATugo" }
+          ],
+          "B": [
+            { exercicio: "Puxador anterior", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=9FFLBDWXSZA&t=301s" },
+            { exercicio: "Remada máquina", series: 3, repeticoes: 12, video: "https://www.youtube.com/watch?v=QyvIEdEHzHc" },
+            { exercicio: "Cadeira flexora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Mesa flexora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Remada alta cross over", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Rosca direta", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Cadeira abdutora", series: 3, repeticoes: 12, video: "" },
+            { exercicio: "Panturrilha em pé", series: 3, repeticoes: 12, video: "" }
+          ]
         }
       }
     };
@@ -448,7 +473,7 @@
 
     function getYouTubeId(url) {
       if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       const match = String(url).match(regExp);
       return (match && match[2].length === 11) ? match[2] : null;
     }
