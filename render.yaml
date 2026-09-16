@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: treinos-personal
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: planilha-data
+      mountPath: /var/data
+      sizeGB: 1

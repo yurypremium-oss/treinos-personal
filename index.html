@@ -6,8 +6,6 @@
   <title>Personal Fit Pro - Portal do Aluno</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS CDN para leitura de planilhas Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- FontAwesome Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -60,14 +58,6 @@
         </button>
       </form>
 
-      <!-- Importação de Arquivos Excel -->
-      <div class="pt-4 border-t border-slate-800 text-center">
-        <label class="text-xs text-slate-400 hover:text-cyan-300 cursor-pointer inline-flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-file-import text-cyan-400"></i>
-          <span>Atualizar Treinos (Importar .xlsx)</span>
-          <input type="file" id="fileInputLogin" accept=".xlsx, .xls, .csv" class="hidden">
-        </label>
-      </div>
     </div>
   </div>
 
@@ -205,15 +195,7 @@
 
   <script>
     // Usuários e senhas sincronizados com a aba "ALUNOS" da planilha.
-    let userCredentials = {
-      "Cileni": "@000",
-      "Lara": "@002",
-      "Igor": "@003",
-      "David": "@004",
-      "Cristina": "@005",
-      "Luciano": "@006",
-      "Yury": "@007"
-    };
+    let userCredentials = {};
 
     // Fichas sincronizadas com as abas individuais da planilha.
     let studentsData = {
@@ -326,26 +308,47 @@
     let currentTab = "A";
     let completedExercises = {};
 
-    document.addEventListener("DOMContentLoaded", () => {
-      populateLoginSelect();
-      setupFileInput();
-    });
+    document.addEventListener("DOMContentLoaded", populateLoginSelect);
 
-    function populateLoginSelect() {
+    async function populateLoginSelect() {
       const select = document.getElementById("loginAluno");
-      select.innerHTML = "";
-      Object.keys(userCredentials).forEach(aluno => {
-        select.innerHTML += `<option value="${aluno}">${aluno}</option>`;
-      });
+      select.innerHTML = '<option value="">Carregando alunos...</option>';
+
+      try {
+        const resposta = await fetch("/api/alunos");
+        if (!resposta.ok) throw new Error("Não foi possível carregar os alunos.");
+        const alunos = await resposta.json();
+        select.innerHTML = alunos.length
+          ? alunos.map(aluno => `<option value="${escapeHtml(aluno.nome)}">${escapeHtml(aluno.nome)}</option>`).join("")
+          : '<option value="">Nenhum aluno cadastrado</option>';
+      } catch (erro) {
+        select.innerHTML = '<option value="">Erro ao carregar alunos</option>';
+        alert(erro.message);
+      }
     }
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
       const aluno = document.getElementById("loginAluno").value;
       const senha = document.getElementById("loginSenha").value.trim();
 
-      if (userCredentials[aluno] && userCredentials[aluno] === senha) {
+      try {
+        const resposta = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ nome: aluno, senha })
+        });
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.erro || "Não foi possível entrar.");
+
         loggedUser = aluno;
+        studentsData[aluno] = {
+          metodologia: "Periodização Personalizada",
+          grupos: {},
+          treinos: resultado.treinos || {}
+        };
+        completedExercises = resultado.progresso || {};
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardApp").classList.remove("hidden");
         
@@ -353,12 +356,13 @@
         document.getElementById("userAvatar").innerText = loggedUser.charAt(0);
 
         loadUserWorkout(loggedUser);
-      } else {
-        alert("Senha incorreta! Tente novamente.");
+      } catch (erro) {
+        alert(erro.message);
       }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
+      await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
       loggedUser = null;
       document.getElementById("loginSenha").value = "";
       document.getElementById("dashboardApp").classList.add("hidden");
@@ -472,6 +476,18 @@
     function toggleExercise(key) {
       completedExercises[key] = !completedExercises[key];
       renderExercises();
+
+      const partes = key.split("_");
+      fetch("/api/progresso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          treino: partes[1],
+          indice: Number(partes[2]),
+          concluido: completedExercises[key]
+        })
+      }).catch(() => alert("Não foi possível salvar o progresso."));
     }
 
     function resetProgress() {
@@ -480,6 +496,15 @@
         delete completedExercises[`${loggedUser}_${currentTab}_${idx}`];
       });
       renderExercises();
+
+      exercises.forEach((_, idx) => {
+        fetch("/api/progresso", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ treino: currentTab, indice: idx, concluido: false })
+        }).catch(() => alert("Não foi possível salvar o progresso."));
+      });
     }
 
     function updateProgress(done, total) {
@@ -506,103 +531,10 @@
       document.getElementById("videoModal").classList.add("hidden");
     }
 
-    // Leitura Dinâmica de Planilhas .xlsx / .csv com leitor inteligente de Divisões A, B, C...
-    function setupFileInput() {
-      const input = document.getElementById("fileInputLogin");
-      input.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          try {
-            const data = new Uint8Array(evt.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            if (workbook.Sheets["ALUNOS"]) {
-              const alunosJson = XLSX.utils.sheet_to_json(workbook.Sheets["ALUNOS"]);
-              const newCreds = {};
-              alunosJson.forEach(row => {
-                const name = row["ALUNOS"] || row["Aluno"] || row["Nome"];
-                const pass = row["Senhas de acesso "] || row["Senhas de acesso"] || row["Senha"];
-                if (name && pass) newCreds[String(name).trim()] = String(pass).trim();
-              });
-              if (Object.keys(newCreds).length > 0) userCredentials = newCreds;
-            }
-
-            const newStudents = {};
-            workbook.SheetNames.forEach(sheetName => {
-              const nameClean = sheetName.trim();
-              if (nameClean.toUpperCase() === 'HOME PAGE' || nameClean.toUpperCase() === 'ALUNOS') return;
-
-              const worksheet = workbook.Sheets[sheetName];
-              const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-              let metodologia = "Periodização Personalizada";
-              let grupos = {};
-              let treinos = {};
-              let currentTreinoKey = "A";
-
-              jsonRows.forEach(row => {
-                if (!row || row.length === 0) return;
-
-                // Suporte a diferentes layouts de planilhas
-                let colDiv = "", exName = "", series = "", reps = "", videoUrl = "";
-
-                row.forEach((cell, cellIdx) => {
-                  const cellStr = String(cell || '').trim();
-                  if (cellStr.length === 1 && ['A','B','C','D','E'].includes(cellStr.toUpperCase())) {
-                    colDiv = cellStr.toUpperCase();
-                  }
-                  if (cellStr.toLowerCase().includes('youtube.com') || cellStr.toLowerCase().includes('youtu.be')) {
-                    videoUrl = cellStr;
-                  }
-                });
-
-                // Se houver divisão na linha
-                if (colDiv) currentTreinoKey = colDiv;
-                if (!treinos[currentTreinoKey]) treinos[currentTreinoKey] = [];
-
-                // Captura de Exercício, Série e Repetição
-                const rowValues = row.map(v => String(v || '').trim()).filter(v => v !== '');
-                if (rowValues.length >= 3) {
-                  for (let i = 0; i < rowValues.length; i++) {
-                    const item = rowValues[i];
-                    if (item.length > 2 && !item.toLowerCase().includes('exercício') && !item.toLowerCase().includes('vídeo') && !item.toLowerCase().includes('divisão') && !item.toLowerCase().includes('http')) {
-                      exName = item;
-                      series = rowValues[i+1] || 3;
-                      reps = rowValues[i+2] || 12;
-                      break;
-                    }
-                  }
-
-                  if (exName) {
-                    treinos[currentTreinoKey].push({
-                      exercicio: exName,
-                      series: series,
-                      repeticoes: reps,
-                      video: videoUrl || "https://www.youtube.com/watch?v=el3oHblB5DM"
-                    });
-                  }
-                }
-              });
-
-              newStudents[nameClean] = { metodologia, grupos, treinos };
-            });
-
-            if (Object.keys(newStudents).length > 0) {
-              studentsData = newStudents;
-              populateLoginSelect();
-              alert(`Planilha e Usuários atualizados com sucesso!\nAlunos cadastrados: ${Object.keys(userCredentials).join(', ')}`);
-            }
-          } catch (err) {
-            console.error(err);
-            alert("Erro ao ler o arquivo Excel. Verifique se o formato está correto.");
-          }
-        };
-
-        reader.readAsArrayBuffer(file);
-      });
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+      }[character]));
     }
   </script>
 </body>
