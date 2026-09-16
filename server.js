@@ -435,12 +435,16 @@ app.get("/", (req, res) => {
 
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 
 // =====================================================
 // INICIAR SERVIDOR
 // =====================================================
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
 
   console.log(
     `Treinos Personal rodando na porta ${PORT}`
