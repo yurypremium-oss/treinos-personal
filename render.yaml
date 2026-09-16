@@ -2,14 +2,16 @@ services:
   - type: web
     name: treinos-personal
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /
     envVars:
       - key: DATA_DIR
-        value: /var/data
-    disk:
-      name: planilha-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: /tmp/treinos-data
+      - key: GITHUB_REPOSITORY
+        value: yurypremium-oss/treinos-personal
+      - key: GITHUB_BRANCH
+        value: main
+      - key: GITHUB_TOKEN
+        sync: false

@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 const NOME_PLANILHA = "personal fit pro dashboard 3.xlsx";
 const DIRETORIO_DADOS = process.env.DATA_DIR || __dirname;
 const PLANILHA = path.join(DIRETORIO_DADOS, NOME_PLANILHA);
+const REPOSITORIO_GITHUB = process.env.GITHUB_REPOSITORY || "";
+const BRANCH_GITHUB = process.env.GITHUB_BRANCH || "main";
+const TOKEN_GITHUB = process.env.GITHUB_TOKEN || "";
 
 const sessoes = new Map();
 const DURACAO_SESSAO = 1000 * 60 * 60 * 8;
@@ -59,6 +62,50 @@ function exigirSessao(req, res, next) {
 function carregarPlanilha() {
   const workbook = XLSX.readFile(PLANILHA);
   return workbook;
+}
+
+function githubConfigurado() {
+  return Boolean(TOKEN_GITHUB && REPOSITORIO_GITHUB.includes("/"));
+}
+
+function urlArquivoGithub() {
+  return `https://api.github.com/repos/${REPOSITORIO_GITHUB}/contents/${encodeURIComponent(NOME_PLANILHA)}`;
+}
+
+async function obterPlanilhaGithub() {
+  const resposta = await fetch(`${urlArquivoGithub()}?ref=${encodeURIComponent(BRANCH_GITHUB)}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${TOKEN_GITHUB}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  });
+
+  if (!resposta.ok) throw new Error(`GitHub não conseguiu ler a planilha (${resposta.status}).`);
+  const arquivo = await resposta.json();
+  return { workbook: XLSX.read(Buffer.from(arquivo.content, "base64")), sha: arquivo.sha };
+}
+
+async function salvarPlanilhaGithub(workbook, sha) {
+  const conteudo = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  const resposta = await fetch(urlArquivoGithub(), {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${TOKEN_GITHUB}`,
+      "Content-Type": "application/json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    },
+    body: JSON.stringify({
+      message: "Atualiza progresso do aluno",
+      content: conteudo.toString("base64"),
+      sha,
+      branch: BRANCH_GITHUB
+    })
+  });
+
+  if (!resposta.ok) throw new Error(`GitHub não conseguiu salvar a planilha (${resposta.status}).`);
+  fs.writeFileSync(PLANILHA, conteudo);
 }
 
 
@@ -183,8 +230,18 @@ function carregarProgresso(nomeAluno) {
   return progresso;
 }
 
-function salvarProgresso(nomeAluno, treino, indice, concluido) {
-  const workbook = carregarPlanilha();
+async function salvarProgresso(nomeAluno, treino, indice, concluido) {
+  let workbook;
+  let sha;
+
+  if (githubConfigurado()) {
+    const remoto = await obterPlanilhaGithub();
+    workbook = remoto.workbook;
+    sha = remoto.sha;
+  } else {
+    workbook = carregarPlanilha();
+  }
+
   const nomeAba = "PROGRESSO";
   const aba = workbook.Sheets[nomeAba];
   const dados = aba
@@ -204,13 +261,35 @@ function salvarProgresso(nomeAluno, treino, indice, concluido) {
 
   workbook.Sheets[nomeAba] = XLSX.utils.aoa_to_sheet(dados);
   if (!workbook.SheetNames.includes(nomeAba)) workbook.SheetNames.push(nomeAba);
-  XLSX.writeFile(workbook, PLANILHA);
+
+  if (githubConfigurado()) {
+    await salvarPlanilhaGithub(workbook, sha);
+  } else {
+    XLSX.writeFile(workbook, PLANILHA);
+  }
+}
+
+async function sincronizarPlanilhaRemota(req, res, next) {
+  if (!githubConfigurado()) return next();
+
+  try {
+    const remoto = await obterPlanilhaGithub();
+    const conteudo = XLSX.write(remoto.workbook, { type: "buffer", bookType: "xlsx" });
+    fs.mkdirSync(DIRETORIO_DADOS, { recursive: true });
+    fs.writeFileSync(PLANILHA, conteudo);
+    next();
+  } catch (erro) {
+    console.error(erro);
+    res.status(503).json({ erro: "A base de dados está temporariamente indisponível." });
+  }
 }
 
 
 // =====================================================
 // API — LISTAR ALUNOS
 // =====================================================
+
+app.use("/api", sincronizarPlanilhaRemota);
 
 app.get("/api/alunos", (req, res) => {
 
@@ -324,7 +403,7 @@ app.get("/api/sessao", exigirSessao, (req, res) => {
   });
 });
 
-app.post("/api/progresso", exigirSessao, (req, res) => {
+app.post("/api/progresso", exigirSessao, async (req, res) => {
   try {
     const treino = String(req.body.treino || "").trim().toUpperCase();
     const indice = Number(req.body.indice);
@@ -335,7 +414,7 @@ app.post("/api/progresso", exigirSessao, (req, res) => {
       return res.status(400).json({ erro: "Exercício inválido." });
     }
 
-    salvarProgresso(req.aluno, treino, indice, concluido);
+    await salvarProgresso(req.aluno, treino, indice, concluido);
     res.json({ sucesso: true });
   } catch (erro) {
     console.error(erro);
