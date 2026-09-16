@@ -439,6 +439,18 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+app.use("/api", (req, res) => {
+  res.status(404).json({ erro: "Endpoint da API não encontrado." });
+});
+
+app.use((erro, req, res, next) => {
+  console.error(erro);
+  if (req.path.startsWith("/api")) {
+    return res.status(500).json({ erro: "Erro interno do servidor." });
+  }
+  next(erro);
+});
+
 
 // =====================================================
 // INICIAR SERVIDOR

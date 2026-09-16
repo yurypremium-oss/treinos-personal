@@ -310,14 +310,33 @@
 
     document.addEventListener("DOMContentLoaded", populateLoginSelect);
 
+    async function fetchJson(url, options = {}, tentativas = 2) {
+      for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
+        const resposta = await fetch(url, { ...options, credentials: "same-origin" });
+        const texto = await resposta.text();
+        let resultado;
+
+        try {
+          resultado = texto ? JSON.parse(texto) : {};
+        } catch {
+          if (tentativa < tentativas) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            continue;
+          }
+          throw new Error("O servidor está iniciando ou indisponível. Tente novamente em alguns segundos.");
+        }
+
+        return { resposta, resultado };
+      }
+    }
+
     async function populateLoginSelect() {
       const select = document.getElementById("loginAluno");
       select.innerHTML = '<option value="">Carregando alunos...</option>';
 
       try {
-        const resposta = await fetch("/api/alunos");
-        if (!resposta.ok) throw new Error("Não foi possível carregar os alunos.");
-        const alunos = await resposta.json();
+        const { resposta, resultado: alunos } = await fetchJson("/api/alunos");
+        if (!resposta.ok) throw new Error(alunos.erro || "Não foi possível carregar os alunos.");
         select.innerHTML = alunos.length
           ? alunos.map(aluno => `<option value="${escapeHtml(aluno.nome)}">${escapeHtml(aluno.nome)}</option>`).join("")
           : '<option value="">Nenhum aluno cadastrado</option>';
@@ -333,13 +352,11 @@
       const senha = document.getElementById("loginSenha").value.trim();
 
       try {
-        const resposta = await fetch("/api/login", {
+        const { resposta, resultado } = await fetchJson("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "same-origin",
           body: JSON.stringify({ nome: aluno, senha })
         });
-        const resultado = await resposta.json();
         if (!resposta.ok) throw new Error(resultado.erro || "Não foi possível entrar.");
 
         loggedUser = aluno;
